@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0b0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Orthodox Bible" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <title>Orthodox Bible</title>
+  <style>
+    :root {
+      --ink: #0a0b0d; --ink-2: #12141a; --elev: #1b1e25; --line: #2a2e38;
+      --gold: #c9a44a; --gold-dim: #8a7030; --paper: #e8e2d4; --muted: #9a9486;
+      --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--ink); color: var(--paper);
+      font-family: Georgia, "Times New Roman", Palatino, serif; -webkit-font-smoothing: antialiased; }
+    body { overflow: hidden; height: 100dvh; }
+    button, select, input { font: inherit; color: inherit; }
+    .app { display: flex; flex-direction: column; height: 100dvh; height: 100svh; }
+    header.top { padding: var(--safe-t) 12px 0; min-height: calc(52px + var(--safe-t));
+      display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); background: #0e1014; z-index: 20; }
+    .brand { flex: 1; min-width: 0; }
+    .brand h1 { margin: 0; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; }
+    .icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--paper); cursor: pointer; }
+    .tabs { display: flex; border-bottom: 1px solid var(--line); background: var(--ink-2); }
+    .tabs button { flex: 1; height: 42px; border: 0; background: transparent; color: var(--muted);
+      letter-spacing: .04em; text-transform: uppercase; font-size: 10px; cursor: pointer; padding: 0 2px; }
+    .tabs button.on { color: var(--gold); box-shadow: inset 0 -2px 0 var(--gold); }
+    main.pane { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 20px calc(76px + var(--safe-b)); }
+    .wrap { max-width: 42rem; margin: 0 auto; }
+    .ref-line { text-align: center; color: var(--gold); letter-spacing: .16em; text-transform: uppercase; font-size: 11px; }
+    .book-title { text-align: center; font-size: clamp(22px,5vw,30px); margin: 6px 0 2px; }
+    .chapter-num { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+    article.verses { font-size: var(--fs, 19px); line-height: 1.72; }
+    .verse { display: block; margin: 0 0 .55em; text-align: justify; }
+    .vn { font-size: .68em; color: var(--gold); margin-right: .35em; vertical-align: super; line-height: 0; }
+    .status { text-align: center; color: var(--muted); padding: 40px 12px; }
+    nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 10px var(--safe-b);
+      background: rgba(10,11,13,.94); border-top: 1px solid var(--line); display: flex; align-items: center; gap: 8px; z-index: 20; }
+    .nav-mid { flex: 1; text-align: center; min-width: 0; cursor: pointer; }
+    .nav-mid .now { color: var(--gold); font-size: 13px; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-mid .hint { font-size: 11px; color: var(--muted); }
+    .nav-btn { background: var(--elev); border: 1px solid var(--line); border-radius: 12px; height: 44px; min-width: 44px; padding: 0 12px; cursor: pointer; }
+    .nav-btn:disabled { opacity: .35; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .overlay.open { opacity: 1; pointer-events: auto; }
+    .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: min(88dvh, 840px);
+      background: var(--ink-2); border-top: 1px solid var(--gold-dim); border-radius: 18px 18px 0 0;
+      z-index: 50; transform: translateY(110%); transition: transform .28s cubic-bezier(.2,.8,.2,1);
+      display: flex; flex-direction: column; padding-bottom: var(--safe-b); }
+    .sheet.open { transform: translateY(0); }
+    .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; border-bottom: 1px solid var(--line); }
+    .sheet-head h2 { margin: 0; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+    .sheet-body { overflow-y: auto; padding: 8px 12px 24px; }
+    .search-row { display: flex; gap: 8px; padding: 10px 16px 4px; }
+    .search-row input { flex: 1; background: var(--elev); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+    .search-row button { background: var(--gold); color: #1a1408; border: 0; border-radius: 10px; padding: 0 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .group-label { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-dim); padding: 16px 8px 6px; }
+    .book-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .book-btn, .hour-btn, .read-card { text-align: left; background: var(--elev); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-size: 14px; width: 100%; }
+    .book-btn.active, .hour-btn.on { border-color: var(--gold); color: var(--gold); }
+    .book-btn .sub, .hour-btn .sub { display: block; font-size: 11px; color: var(--muted); }
+    .chap-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .chap-btn { background: var(--elev); border: 1px solid var(--line); border-radius: 8px; height: 40px; cursor: pointer; }
+    .chap-btn.active { border-color: var(--gold); color: var(--gold); }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 8px; border-bottom: 1px solid var(--line); }
+    .settings-row label { color: var(--muted); }
+    .stepper { display: flex; gap: 8px; align-items: center; }
+    .stepper button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--elev); cursor: pointer; }
+    .note { color: var(--muted); font-size: 13px; line-height: 1.55; padding: 16px 8px; }
+    .day-head { text-align: center; margin-bottom: 18px; }
+    .day-head h2 { margin: 8px 0 4px; font-size: 22px; }
+    .pill { display: inline-block; border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; font-size: 11px; color: var(--muted); margin: 2px; }
+    .pill.gold { color: var(--gold); border-color: #3a3420; }
+    .saints { color: var(--muted); font-size: 14px; text-align: center; margin: 8px 0 20px; }
+    .read-card { margin-bottom: 8px; }
+    .read-card .src { color: var(--gold); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+    .passage { margin: 0 0 22px; }
+    .done { opacity: .55; }
+    .mark { margin: 6px 0 20px; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+    .prayer { margin: 0 0 1em; line-height: 1.65; font-size: var(--fs, 19px); white-space: pre-wrap; }
+    .prayer.center { text-align: center; color: var(--gold); font-size: 15px; }
+    details.ps { background: var(--elev); border: 1px solid var(--line); border-radius: 10px; margin: 0 0 8px; padding: 8px 12px; }
+    details.ps summary { cursor: pointer; color: var(--gold); }
+    .kyrie-box { text-align: center; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; margin: 16px 0; }
+    .kyrie-box button { background: var(--gold); color: #1a1408; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+  </style>
+  <script src="bible-data.js"></script>
+  <script src="calendar-data.js"></script>
+  <script src="agpeya-data.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand"><h1>Orthodox Bible</h1><small id="subline">Scripture</small></div>
+      <button class="icon-btn" id="btnSearch" title="Look up">⌕</button>
+      <button class="icon-btn" id="btnSettings" title="Settings">⚙</button>
+    </header>
+    <div class="tabs">
+      <button class="on" data-tab="bible">Bible</button>
+      <button data-tab="tewahedo">Tewahedo</button>
+      <button data-tab="coptic">Coptic</button>
+      <button data-tab="agpeya">Hours</button>
+    </div>
+    <main class="pane" id="pane"><div class="status">Opening the Scriptures…</div></main>
+    <nav class="bottom" id="bibleNav">
+      <button class="nav-btn" id="prevCh">‹ Prev</button>
+      <div class="nav-mid" id="openBooks">
+        <div class="now" id="nowRef">Select a book</div>
+        <div class="hint">Book &amp; chapter · progress is saved</div>
+      </div>
+      <button class="nav-btn" id="nextCh">Next ›</button>
+    </nav>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <div class="sheet" id="sheetBooks">
+    <div class="sheet-head"><h2>Books</h2><button class="icon-btn" id="closeBooks">✕</button></div>
+    <div class="search-row">
+      <input id="jumpInput" placeholder="John 3:16 · Sirach 2 · Psalm 50" autocomplete="off" />
+      <button id="jumpGo">Go</button>
+    </div>
+    <div class="sheet-body" id="bookList"></div>
+  </div>
+  <div class="sheet" id="sheetChaps">
+    <div class="sheet-head"><h2 id="chapTitle">Chapters</h2><button class="icon-btn" id="closeChaps">✕</button></div>
+    <div class="sheet-body"><div class="chap-grid" id="chapGrid"></div></div>
+  </div>
+  <div class="sheet" id="sheetSettings">
+    <div class="sheet-head"><h2>Reading</h2><button class="icon-btn" id="closeSettings">✕</button></div>
+    <div class="sheet-body">
+      <div class="settings-row">
+        <label>Text size</label>
+        <div class="stepper"><button id="fsDown">A−</button><span id="fsVal">19</span><button id="fsUp">A+</button></div>
+      </div>
+      <p class="note">Named Orthodox Bible. The text is the public-domain World English Bible with deuterocanon, listed in Orthodox Study Bible book order (Kingdoms, Wisdom, Sirach, Maccabees, Psalm 151). The printed OSB uses the NKJV and the St. Athanasius Academy Septuagint, which cannot be copied here. Hours follow the Alexandrian Agpeya. Tewahedo and Coptic tabs use the shared Alexandrian civil calendar with each church’s commemorations. Daily passages are a home cycle, not the parish Gitsawē or Katameros. Enoch, Jubilees, and the Meqabyan books of the Tewahedo canon are not in this English file yet. Progress stays on this phone.</p>
+    </div>
+  </div>
+<script>
+const GROUPS = [
+  { label: "The Law", ids: ["GEN","EXO","LEV","NUM","DEU"] },
+  { label: "Historical books", ids: ["JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","TOB","JDT","ESG","EST","1MA","2MA","3MA"] },
+  { label: "Wisdom books", ids: ["PSA","PS2","JOB","PRO","ECC","SNG","WIS","SIR"] },
+  { label: "The Prophets", ids: ["HOS","AMO","MIC","JOL","OBA","JON","NAM","HAB","ZEP","HAG","ZEC","MAL","ISA","JER","BAR","LAM","EZK","DAN","DAG"] },
+  { label: "Appendix", ids: ["1ES","2ES","MAN","4MA"] },
+  { label: "Holy Gospels", ids: ["MAT","MRK","LUK","JHN"] },
+  { label: "Acts", ids: ["ACT"] },
+  { label: "Pauline epistles", ids: ["ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB"] },
+  { label: "Catholic epistles", ids: ["JAS","1PE","2PE","1JN","2JN","3JN","JUD"] },
+  { label: "Revelation", ids: ["REV"] }
+];
+const OSB_NAME = {
+  "1SA":"1 Kingdoms","2SA":"2 Kingdoms","1KI":"3 Kingdoms","2KI":"4 Kingdoms",
+  "EZR":"1 Ezra (Ezra)","NEH":"2 Ezra (Nehemiah)","1ES":"1 Esdras","2ES":"2 Esdras",
+  "EST":"Esther","ESG":"Esther (LXX)","SNG":"Song of Songs",
+  "WIS":"Wisdom of Solomon","SIR":"Wisdom of Sirach","BAR":"Baruch",
+  "PS2":"Psalm 151","MAN":"Prayer of Manasseh","DAG":"Daniel (LXX additions)",
+  "1MA":"1 Maccabees","2MA":"2 Maccabees","3MA":"3 Maccabees","4MA":"4 Maccabees"
+};
+function displayName(id){ if(OSB_NAME[id]) return OSB_NAME[id]; const b=bookMeta(id); return b?b.name:id; }
+const ALIASES = {genesis:"GEN",exodus:"EXO",exo:"EXO",leviticus:"LEV",lev:"LEV",numbers:"NUM",num:"NUM",deuteronomy:"DEU",deut:"DEU",joshua:"JOS",josh:"JOS",judges:"JDG",ruth:"RUT","1samuel":"1SA","1sam":"1SA","1sa":"1SA","1kingdoms":"1SA","2samuel":"2SA","2sam":"2SA","2kingdoms":"2SA","1kings":"1KI","3kingdoms":"1KI","2kings":"2KI","4kingdoms":"2KI","1chronicles":"1CH","1chr":"1CH","2chronicles":"2CH",ezra:"EZR",nehemiah:"NEH",neh:"NEH",esther:"EST",job:"JOB",psalm:"PSA",psalms:"PSA",ps:"PSA",proverbs:"PRO",pro:"PRO",ecclesiastes:"ECC",song:"SNG","songofsongs":"SNG","songofsolomon":"SNG",isaiah:"ISA",isa:"ISA",jeremiah:"JER",jer:"JER",lamentations:"LAM",ezekiel:"EZK",eze:"EZK",daniel:"DAN",dan:"DAN",hosea:"HOS",joel:"JOL",amos:"AMO",obadiah:"OBA",jonah:"JON",micah:"MIC",nahum:"NAM",habakkuk:"HAB",zephaniah:"ZEP",haggai:"HAG",zechariah:"ZEC",malachi:"MAL",matthew:"MAT",matt:"MAT",mat:"MAT",mark:"MRK",luke:"LUK",luk:"LUK",john:"JHN",acts:"ACT",romans:"ROM",rom:"ROM","1corinthians":"1CO","1cor":"1CO","1co":"1CO","2corinthians":"2CO","2cor":"2CO",galatians:"GAL",ephesians:"EPH",philippians:"PHP",phil:"PHP",colossians:"COL","1thessalonians":"1TH","2thessalonians":"2TH","1timothy":"1TI","2timothy":"2TI",titus:"TIT",philemon:"PHM",hebrews:"HEB",heb:"HEB",james:"JAS","1peter":"1PE","2peter":"2PE","1john":"1JN","2john":"2JN","3john":"3JN",jude:"JUD",revelation:"REV",rev:"REV",tobit:"TOB",judith:"JDT",wisdom:"WIS",sirach:"SIR",ecclesiasticus:"SIR",baruch:"BAR","1maccabees":"1MA","2maccabees":"2MA","3maccabees":"3MA","4maccabees":"4MA","1esdras":"1ES","2esdras":"2ES",manasseh:"MAN","psalm151":"PS2"};
+const $ = id => document.getElementById(id);
+const pane = $("pane");
+const state = { tab:"bible", book:"JHN", chapter:1, font:19, scroll:0, dailyOffset:0, copticOffset:0, agpeyaId:"prime", readMarks:{}, prayed:{} };
+function loadPrefs(){ try{ Object.assign(state, JSON.parse(localStorage.getItem("obible3")||"{}")); }catch(e){} if(state.tab==="daily") state.tab="tewahedo"; document.documentElement.style.setProperty("--fs", state.font+"px"); $("fsVal").textContent=state.font; }
+function savePrefs(){ localStorage.setItem("obible3", JSON.stringify({tab:state.tab,book:state.book,chapter:state.chapter,font:state.font,scroll:state.scroll,agpeyaId:state.agpeyaId,readMarks:state.readMarks,prayed:state.prayed})); }
+function bookMeta(id){ return (window.BIBLE.books||[]).find(b=>b.id===id); }
+function chaptersOf(id){ return (window.BIBLE.t||{})[id]||[]; }
+function bookIndex(id){ return window.BIBLE.books.findIndex(b=>b.id===id); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function closeSheets(){ $("overlay").classList.remove("open"); document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); }
+function openSheet(el){ $("overlay").classList.add("open"); el.classList.add("open"); }
+function parseRef(raw){ const s=raw.trim().toLowerCase().replace(/\s+/g," "); if(!s) return null; const m=s.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/); let name,ch=1,vs=null; if(m){name=m[1];ch=+m[2];vs=m[3]?+m[3]:null;} else name=s; const key=name.replace(/[.\s]/g,""); const id=ALIASES[name]||ALIASES[key]||(bookMeta(name.toUpperCase())||{}).id; if(!id||!bookMeta(id)) return null; const max=bookMeta(id).n; if(ch<1||ch>max) ch=1; return {book:id,chapter:ch,verse:vs}; }
+function renderBookList(){ const wrap=$("bookList"); wrap.innerHTML=""; for(const g of GROUPS){ const lab=document.createElement("div"); lab.className="group-label"; lab.textContent=g.label; wrap.appendChild(lab); const grid=document.createElement("div"); grid.className="book-grid"; for(const id of g.ids){ const b=bookMeta(id); if(!b) continue; const btn=document.createElement("button"); btn.className="book-btn"+(id===state.book?" active":""); btn.innerHTML=escapeHtml(displayName(id))+'<span class="sub">'+b.n+" ch</span>"; btn.onclick=()=>{ state.book=id; openChapters(id); }; grid.appendChild(btn);} wrap.appendChild(grid);} }
+function openChapters(id){ const b=bookMeta(id); $("chapTitle").textContent=displayName(id); const grid=$("chapGrid"); grid.innerHTML=""; for(let i=1;i<=b.n;i++){ const btn=document.createElement("button"); btn.className="chap-btn"+(id===state.book&&i===state.chapter?" active":""); btn.textContent=i; btn.onclick=()=>{ showChapter(id,i,0); closeSheets(); }; grid.appendChild(btn);} $("sheetBooks").classList.remove("open"); $("sheetChaps").classList.add("open"); $("overlay").classList.add("open"); }
+function verseRangeHtml(book,ch,start,end){ const arr=chaptersOf(book)[ch-1]||[]; const last=Math.min(end||arr.length-1, arr.length-1); let html=""; for(let n=start;n<=last;n++){ const t=arr[n]; if(!t) continue; html+=`<span class="verse" id="v${n}"><sup class="vn">${n}</sup>${escapeHtml(t)}</span>`; } return html; }
+function showChapter(book,chapter,restoreScroll,highlight){ state.tab="bible"; state.book=book; state.chapter=chapter; setTab("bible"); const meta=bookMeta(book); const arr=chaptersOf(book)[chapter-1]||[]; $("nowRef").textContent=`${displayName(book)} ${chapter}`; const i=bookIndex(book); $("prevCh").disabled=!(chapter>1||i>0); $("nextCh").disabled=!(meta&&(chapter<meta.n||i<window.BIBLE.books.length-1)); pane.innerHTML=`<div class="wrap"><div class="ref-line">Holy Scripture</div><h2 class="book-title">${escapeHtml(displayName(book))}</h2><div class="chapter-num">Chapter ${chapter}</div><article class="verses">${verseRangeHtml(book,chapter,1,arr.length-1)}</article></div>`; if(restoreScroll) pane.scrollTop=restoreScroll*(pane.scrollHeight-pane.clientHeight); else pane.scrollTop=0; if(highlight){ const el=document.getElementById("v"+highlight); if(el) setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),40);} savePrefs(); }
+function goPrev(){ const i=bookIndex(state.book); if(state.chapter>1) return showChapter(state.book,state.chapter-1); if(i>0){ const prev=window.BIBLE.books[i-1]; showChapter(prev.id,prev.n);} }
+function goNext(){ const meta=bookMeta(state.book); const i=bookIndex(state.book); if(meta&&state.chapter<meta.n) return showChapter(state.book,state.chapter+1); if(i<window.BIBLE.books.length-1) showChapter(window.BIBLE.books[i+1].id,1); }
+function isoDate(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function addDays(d,n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()+n); }
+function renderDaily(){
+  const day=addDays(new Date(), state.dailyOffset||0);
+  const eth = window.TEWAHEDO.toEthiopic(day);
+  const key = isoDate(day);
+  const month = window.TEWAHEDO.MONTHS[eth.month-1];
+  const seas = window.TEWAHEDO.season(day);
+  const fast = window.TEWAHEDO.fastOfDay(day, eth);
+  const comm = window.TEWAHEDO.commemorations(eth);
+  const ev = window.TEWAHEDO.evangelistName(eth.year);
+  const ethLabel = month.en + " " + eth.day + ", " + eth.year + " E.C.";
+  const geezLabel = month.geez + " " + eth.day;
+  const nice = day.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const title = seas.name || comm[0] || "Daily readings";
+  let body = `<div class="wrap"><div class="day-head"><div class="ref-line">Tewahedo calendar</div>
+    <h2>${escapeHtml(title)}</h2>
+    <div>${escapeHtml(ethLabel)}</div>
+    <div class="note" style="padding:4px">${escapeHtml(geezLabel)} · ${escapeHtml(nice)}</div>
+    <span class="pill gold">${escapeHtml("Year of " + ev)}</span>
+    <span class="pill">${escapeHtml(fast)}</span>
+  </div>`;
+  body += `<p class="saints">${comm.map(escapeHtml).join(" · ")}</p>`;
+  body += `<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px"><button class="nav-btn" id="dPrev">‹</button><button class="nav-btn" id="dToday">Today</button><button class="nav-btn" id="dNext">›</button></div>`;
+  const readings = window.TEWAHEDO.readingsFor(eth, day);
+  const marks = state.readMarks[key] || {};
+  readings.forEach((rd,idx)=>{
+    const marked=!!marks[idx];
+    body += `<button class="read-card ${marked?"done":""}" data-jump="${idx}"><div class="src">${escapeHtml(rd.src||"Reading")}</div><div>${escapeHtml(rd.ref)}</div></button>`;
+    if(rd.b&&rd.c) body += `<article class="verses passage ${marked?"done":""}">${verseRangeHtml(rd.b,rd.c,rd.s||1,rd.e||999)}</article>`;
+    body += `<button class="mark" data-mark="${idx}">${marked?"Read · tap to undo":"Mark as read"}</button>`;
+  });
+  body += `<p class="note">Home reading in the shape of Tewahedo Qidase (psalm, prophet, epistle, Acts, gospel). The year’s gospel follows the Tewahedo evangelist cycle. This is not a substitute for the Gitsawē read in church.</p></div>`;
+  pane.innerHTML = body;
+  wireDailyNav();
+  pane.querySelectorAll("[data-mark]").forEach(btn=>{
+    btn.onclick=()=>{ const i=+btn.dataset.mark; state.readMarks[key]=state.readMarks[key]||{}; state.readMarks[key][i]=!state.readMarks[key][i]; savePrefs(); renderDaily(); };
+  });
+  pane.querySelectorAll("[data-jump]").forEach(btn=>{
+    btn.onclick=()=>{ const rd=readings[+btn.dataset.jump]; if(rd&&rd.b) showChapter(rd.b,rd.c,0,rd.s); };
+  });
+}
+
+function wireDailyNav(){ const p=$("dPrev"),t=$("dToday"),n=$("dNext"); if(p) p.onclick=()=>{state.dailyOffset--; renderDaily();}; if(n) n.onclick=()=>{state.dailyOffset++; renderDaily();}; if(t) t.onclick=()=>{state.dailyOffset=0; renderDaily();}; }
+function renderCoptic(){
+  const day=addDays(new Date(), state.copticOffset||0);
+  const cop = window.COPTIC.toCoptic(day);
+  const key = "c-"+isoDate(day);
+  const month = window.COPTIC.MONTHS[cop.month-1];
+  const seas = window.COPTIC.season(day);
+  const fast = window.COPTIC.fastOfDay(day, cop);
+  const comm = window.COPTIC.commemorations(cop);
+  const label = month.en + " " + cop.day + ", " + cop.year + " A.M.";
+  const alt = month.cop + " " + cop.day;
+  const nice = day.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  const title = seas.name || comm[0] || "Daily readings";
+  let body = `<div class="wrap"><div class="day-head"><div class="ref-line">Coptic calendar</div>
+    <h2>${escapeHtml(title)}</h2>
+    <div>${escapeHtml(label)}</div>
+    <div class="note" style="padding:4px">${escapeHtml(alt)} · ${escapeHtml(nice)}</div>
+    <span class="pill gold">Anno Martyrum ${cop.year}</span>
+    <span class="pill">${escapeHtml(fast)}</span>
+  </div>`;
+  body += `<p class="saints">${comm.map(escapeHtml).join(" · ")}</p>`;
+  body += `<div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px"><button class="nav-btn" id="cPrev">‹</button><button class="nav-btn" id="cToday">Today</button><button class="nav-btn" id="cNext">›</button></div>`;
+  const readings = window.COPTIC.readingsFor(cop);
+  const marks = state.readMarks[key] || {};
+  readings.forEach((rd,idx)=>{
+    const marked=!!marks[idx];
+    body += `<button class="read-card ${marked?"done":""}" data-jump="${idx}"><div class="src">${escapeHtml(rd.src||"Reading")}</div><div>${escapeHtml(rd.ref)}</div></button>`;
+    if(rd.b&&rd.c) body += `<article class="verses passage ${marked?"done":""}">${verseRangeHtml(rd.b,rd.c,rd.s||1,rd.e||999)}</article>`;
+    body += `<button class="mark" data-mark="${idx}">${marked?"Read · tap to undo":"Mark as read"}</button>`;
+  });
+  body += `<p class="note">Home reading in the shape of the Coptic liturgy (psalm, prophet, Pauline, Praxis, gospel). This is not the parish Katameros.</p></div>`;
+  pane.innerHTML = body;
+  $("cPrev").onclick=()=>{state.copticOffset--; renderCoptic();};
+  $("cNext").onclick=()=>{state.copticOffset++; renderCoptic();};
+  $("cToday").onclick=()=>{state.copticOffset=0; renderCoptic();};
+  pane.querySelectorAll("[data-mark]").forEach(btn=>{
+    btn.onclick=()=>{ const i=+btn.dataset.mark; state.readMarks[key]=state.readMarks[key]||{}; state.readMarks[key][i]=!state.readMarks[key][i]; savePrefs(); renderCoptic(); };
+  });
+  pane.querySelectorAll("[data-jump]").forEach(btn=>{
+    btn.onclick=()=>{ const rd=readings[+btn.dataset.jump]; if(rd&&rd.b) showChapter(rd.b,rd.c,0,rd.s); };
+  });
+}
+function todayKey(){ return isoDate(new Date()); }
+function renderAgpeyaList(){ const prayed=state.prayed[todayKey()]||{}; let html=`<div class="wrap"><div class="ref-line">Alexandrian hours</div><h2 class="book-title">Book of Hours</h2><p class="note" style="text-align:center">${escapeHtml(window.AGPEYA.about)}</p>`; for(const h of window.AGPEYA.hours){ html+=`<button class="hour-btn ${prayed[h.id]?"on":""}" data-h="${h.id}">${escapeHtml(h.name)}${prayed[h.id]?" · prayed":""}<span class="sub">${escapeHtml(h.when)} — ${escapeHtml(h.theme)}</span></button>`; } html+="</div>"; pane.innerHTML=html; pane.querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>renderAgpeyaHour(b.dataset.h)); }
+function psalmBlock(n){ const arr=chaptersOf("PSA")[n-1]; if(!arr) return ""; let verses=""; for(let i=1;i<arr.length;i++){ if(arr[i]) verses+=`<span class="verse"><sup class="vn">${i}</sup>${escapeHtml(arr[i])}</span>`; } return `<details class="ps"><summary>Psalm ${n}</summary><article class="verses">${verses}</article></details>`; }
+function gospelBlock(g){ if(!g) return ""; const meta=bookMeta(g.b); return `<div class="ref-line" style="margin-top:18px">Gospel · ${escapeHtml(meta?meta.name:g.b)} ${g.c}:${g.s}–${g.e}</div><article class="verses">${verseRangeHtml(g.b,g.c,g.s,g.e)}</article>`; }
+function renderAgpeyaHour(id){ const h=window.AGPEYA.hours.find(x=>x.id===id)||window.AGPEYA.hours[0]; state.agpeyaId=id; savePrefs(); const C=window.AGPEYA.common; const prayed=(state.prayed[todayKey()]||{})[id]; let html=`<div class="wrap"><button class="nav-btn" id="agBack" style="margin-bottom:12px">‹ All hours</button><div class="ref-line">${escapeHtml(h.hour)}</div><h2 class="book-title">${escapeHtml(h.name)}</h2><div class="chapter-num">${escapeHtml(h.when)}</div><p class="note" style="text-align:center">${escapeHtml(h.theme)}</p><p class="prayer center">${escapeHtml(C.sign)}</p><p class="prayer center">${escapeHtml(C.kyrieShort)}</p><p class="prayer center">${escapeHtml(C.gloria)}</p><p class="prayer">${escapeHtml(C.fathers)}</p><p class="prayer">${escapeHtml(C.thanksgiving)}</p><div class="ref-line">Psalm 51 · Have mercy on me, O God</div>${psalmBlock(51)}<div class="group-label">Psalms of the hour</div>`; (h.psalms||[]).forEach(n=>{ html+=psalmBlock(n); }); if(h.psalmNote) html+=`<p class="note">${escapeHtml(h.psalmNote)}</p>`; html+=gospelBlock(h.gospel); if(h.extraGospel) html+=gospelBlock(h.extraGospel); html+=`<div class="group-label">Litanies</div>`; (h.litanies||[]).forEach(t=>{ html+=`<p class="prayer">${escapeHtml(t)}</p>`; }); html+=`<div class="kyrie-box"><div id="kCount">Lord have mercy — 0 / 41</div><button id="kAdd" style="margin-top:10px">Lord, have mercy</button></div><p class="prayer">${escapeHtml(C.trisagion)}</p><p class="prayer">${escapeHtml(C.hail)}</p><p class="prayer">${escapeHtml(C.fathers)}</p><p class="prayer">${escapeHtml(C.conclusion)}</p><button class="mark" id="markHour">${prayed?"Prayed today · tap to undo":"Mark this hour prayed"}</button></div>`; pane.innerHTML=html; pane.scrollTop=0; let k=0; $("kAdd").onclick=()=>{ k=Math.min(41,k+1); document.getElementById("kCount").textContent=k>=41?"Lord have mercy — 41. Amen.":`Lord have mercy — ${k} / 41`; }; $("agBack").onclick=renderAgpeyaList; $("markHour").onclick=()=>{ const key=todayKey(); state.prayed[key]=state.prayed[key]||{}; state.prayed[key][id]=!state.prayed[key][id]; savePrefs(); renderAgpeyaHour(id); }; }
+function setTab(tab){ state.tab=tab; document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab)); $("bibleNav").style.display=tab==="bible"?"flex":"none"; $("subline").textContent=tab==="bible"?"Scripture":tab==="tewahedo"?"Ge'ez calendar":tab==="coptic"?"Coptic calendar":"Alexandrian hours"; pane.style.paddingBottom=tab==="bible"?"":"24px"; }
+function openTab(tab){ setTab(tab); if(tab==="bible") showChapter(state.book,state.chapter,state.scroll); else if(tab==="tewahedo"||tab==="daily"){ state.dailyOffset=0; renderDaily(); } else if(tab==="coptic"){ state.copticOffset=0; renderCoptic(); } else renderAgpeyaList(); savePrefs(); }
+pane.addEventListener("scroll",()=>{ if(state.tab!=="bible") return; const max=pane.scrollHeight-pane.clientHeight; state.scroll=max>0?pane.scrollTop/max:0; savePrefs(); },{passive:true});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
+$("openBooks").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); };
+$("btnSearch").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); setTimeout(()=>$("jumpInput").focus(),150); };
+$("btnSettings").onclick=()=>openSheet($("sheetSettings"));
+$("closeBooks").onclick=closeSheets; $("closeChaps").onclick=closeSheets; $("closeSettings").onclick=closeSheets; $("overlay").onclick=closeSheets;
+$("prevCh").onclick=goPrev; $("nextCh").onclick=goNext;
+$("jumpGo").onclick=()=>{ const ref=parseRef($("jumpInput").value); if(!ref){ $("jumpInput").style.borderColor="#c45c5c"; return;} $("jumpInput").style.borderColor=""; showChapter(ref.book,ref.chapter,0,ref.verse); closeSheets(); };
+$("jumpInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("jumpGo").click(); });
+$("fsUp").onclick=()=>{ state.font=Math.min(28,state.font+1); document.documentElement.style.setProperty("--fs",state.font+"px"); $("fsVal").textContent=state.font; savePrefs(); };
+$("fsDown").onclick=()=>{ state.font=Math.max(15,state.font-1); document.documentElement.style.setProperty("--fs",state.font+"px"); $("fsVal").textContent=state.font; savePrefs(); };
+document.addEventListener("keydown",e=>{ if(e.target.tagName==="INPUT"||state.tab!=="bible") return; if(e.key==="ArrowLeft") goPrev(); if(e.key==="ArrowRight") goNext(); });
+(function init(){ loadPrefs(); if(!window.BIBLE||!window.BIBLE.t){ pane.innerHTML='<div class="status">Bible data did not load. Keep the app files in the same folder, or wait for GitHub Pages to finish the first download.</div>'; return; } if(!bookMeta(state.book)){ state.book="JHN"; state.chapter=1; } openTab(state.tab||"bible"); if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); } })();
+</script>
+</body>
+</html>
