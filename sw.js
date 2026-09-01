@@ -1,4 +1,4 @@
-const CACHE = "orthodox-bible-v6";
+const CACHE = "orthodox-bible-v7";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,7 +7,9 @@ const ASSETS = [
   "./agpeya-data.js",
   "./study-data.js",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./apple-touch-icon.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {

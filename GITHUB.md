@@ -10,6 +10,8 @@ Upload these files to a public repo (same folder, no extra nesting):
 - sw.js
 - manifest.webmanifest
 - icon.svg
+- apple-touch-icon.png
+- icon-512.png
 
 Repo → Settings → Pages → Source: Deploy from a branch → `main` / `/ (root)`.
 
