@@ -227,9 +227,9 @@
   </aside>
   <aside class="chap-rail" id="chapRail">
     <div class="chap-rail-bar">
-      <button class="nav-btn" id="chapRailPrevTop">‹ Prev</button>
+      <button class="nav-btn" id="chapRailPrevTop">‹ Book</button>
       <div class="chap-rail-title"><h2 id="chapRailTitle">Chapters</h2><small id="chapRailNow">Chapter</small></div>
-      <button class="nav-btn" id="chapRailNextTop">Next ›</button>
+      <button class="nav-btn" id="chapRailNextTop">Book ›</button>
     </div>
     <div class="chap-rail-body"><div class="chap-grid" id="chapRailGrid"></div></div>
     <div class="chap-rail-bar foot">
@@ -340,6 +340,7 @@ function chapRailIsOpen(){ return $("chapRail").classList.contains("open"); }
 function openChapRail(){ closeSheets(); closeDrawer(); fillChapRail(); $("chapRail").classList.add("open"); $("drawerScrim").classList.add("open"); }
 function closeChapRail(){ $("chapRail").classList.remove("open"); if(!drawerIsOpen()) $("drawerScrim").classList.remove("open"); }
 function sheetIsOpen(){ return !!document.querySelector(".sheet.open"); }
+function bookOrder(){ const ids=[]; for(const g of GROUPS) for(const id of g.ids) if(bookMeta(id)) ids.push(id); return ids; }
 function fillChapRail(){
   const b=bookMeta(state.book); if(!b) return;
   $("chapRailTitle").textContent=displayName(state.book);
@@ -353,11 +354,14 @@ function fillChapRail(){
     grid.appendChild(btn);
   }
   const first=state.chapter<=1, last=state.chapter>=b.n;
-  ["chapRailPrevTop","chapRailPrevBot"].forEach(id=>{ $(id).disabled=first; });
-  ["chapRailNextTop","chapRailNextBot"].forEach(id=>{ $(id).disabled=last; });
+  const order=bookOrder(), pos=order.indexOf(state.book);
+  $("chapRailPrevBot").disabled=first; $("chapRailNextBot").disabled=last;
+  $("chapRailPrevTop").disabled=pos<=0; $("chapRailNextTop").disabled=pos<0||pos>=order.length-1;
 }
 function chapRailPrev(){ if(state.chapter>1){ showChapter(state.book,state.chapter-1); fillChapRail(); } }
 function chapRailNext(){ const b=bookMeta(state.book); if(b&&state.chapter<b.n){ showChapter(state.book,state.chapter+1); fillChapRail(); } }
+function chapRailPrevBook(){ const order=bookOrder(), pos=order.indexOf(state.book); if(pos>0){ showChapter(order[pos-1],1); fillChapRail(); } }
+function chapRailNextBook(){ const order=bookOrder(), pos=order.indexOf(state.book); if(pos>=0&&pos<order.length-1){ showChapter(order[pos+1],1); fillChapRail(); } }
 (function bindDrawerSwipe(){
   const swipe={x:0,y:0,on:false,axis:null};
   function ignore(el){
@@ -579,8 +583,8 @@ document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>openTab(b.dat
 $("openBooks").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); };
 $("btnMenu").onclick=openDrawer; $("closeDrawer").onclick=closeDrawer;
 $("drawerScrim").onclick=()=>{ closeDrawer(); closeChapRail(); };
-$("chapRailPrevTop").onclick=chapRailPrev; $("chapRailPrevBot").onclick=chapRailPrev;
-$("chapRailNextTop").onclick=chapRailNext; $("chapRailNextBot").onclick=chapRailNext;
+$("chapRailPrevTop").onclick=chapRailPrevBook; $("chapRailNextTop").onclick=chapRailNextBook;
+$("chapRailPrevBot").onclick=chapRailPrev; $("chapRailNextBot").onclick=chapRailNext;
 $("drawerNav").addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) drawerGo(b.dataset.go); });
 $("btnSearch").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); setTimeout(()=>$("jumpInput").focus(),150); };
 $("btnMarks").onclick=()=>renderBookmarks();
