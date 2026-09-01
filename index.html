@@ -100,6 +100,18 @@
       display: flex; flex-direction: column; padding: var(--safe-t) 0 var(--safe-b); visibility: hidden; pointer-events: none;
       transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s .28s; }
     aside.drawer.open { transform: translateX(0); visibility: visible; pointer-events: auto; transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s 0s; }
+    aside.chap-rail { position: fixed; top: 0; right: 0; bottom: 0; width: min(88vw, 340px); background: #0e1014;
+      border-left: 1px solid var(--gold-dim); z-index: 70; transform: translateX(105%);
+      display: flex; flex-direction: column; padding: var(--safe-t) 0 var(--safe-b); visibility: hidden; pointer-events: none;
+      transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s .28s; }
+    aside.chap-rail.open { transform: translateX(0); visibility: visible; pointer-events: auto; transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s 0s; }
+    .chap-rail-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .chap-rail-bar.foot { border-bottom: 0; border-top: 1px solid var(--line); }
+    .chap-rail-bar .nav-btn { flex: 1; font-size: 13px; }
+    .chap-rail-title { flex: 1; min-width: 0; text-align: center; }
+    .chap-rail-title h2 { margin: 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+    .chap-rail-title small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .chap-rail-body { overflow-y: auto; padding: 12px; flex: 1; }
     .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 18px 16px 12px; border-bottom: 1px solid var(--line); }
     .drawer-head > div { flex: 1; min-width: 0; }
     .drawer-head h1 { margin: 0; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); line-height: 1.35; }
@@ -213,6 +225,18 @@
       <button data-go="settings">Reading settings</button>
     </nav>
   </aside>
+  <aside class="chap-rail" id="chapRail">
+    <div class="chap-rail-bar">
+      <button class="nav-btn" id="chapRailPrevTop">‹ Prev</button>
+      <div class="chap-rail-title"><h2 id="chapRailTitle">Chapters</h2><small id="chapRailNow">Chapter</small></div>
+      <button class="nav-btn" id="chapRailNextTop">Next ›</button>
+    </div>
+    <div class="chap-rail-body"><div class="chap-grid" id="chapRailGrid"></div></div>
+    <div class="chap-rail-bar foot">
+      <button class="nav-btn" id="chapRailPrevBot">‹ Previous chapter</button>
+      <button class="nav-btn" id="chapRailNextBot">Next chapter ›</button>
+    </div>
+  </aside>
   <div class="overlay" id="overlay"></div>
   <div class="sheet" id="sheetBooks">
     <div class="sheet-head"><h2>Books</h2><button class="icon-btn" id="closeBooks">✕</button></div>
@@ -308,11 +332,32 @@ function chaptersOf(id){ return (window.BIBLE.t||{})[id]||[]; }
 function bookIndex(id){ return window.BIBLE.books.findIndex(b=>b.id===id); }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 function closeSheets(){ $("overlay").classList.remove("open"); document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); }
-function openSheet(el){ closeDrawer(); $("overlay").classList.add("open"); el.classList.add("open"); }
-function openDrawer(){ closeSheets(); $("drawer").classList.add("open"); $("drawerScrim").classList.add("open"); }
-function closeDrawer(){ $("drawer").classList.remove("open"); $("drawerScrim").classList.remove("open"); }
+function openSheet(el){ closeDrawer(); closeChapRail(); $("overlay").classList.add("open"); el.classList.add("open"); }
+function openDrawer(){ closeSheets(); closeChapRail(); $("drawer").classList.add("open"); $("drawerScrim").classList.add("open"); }
+function closeDrawer(){ $("drawer").classList.remove("open"); if(!chapRailIsOpen()) $("drawerScrim").classList.remove("open"); }
 function drawerIsOpen(){ return $("drawer").classList.contains("open"); }
+function chapRailIsOpen(){ return $("chapRail").classList.contains("open"); }
+function openChapRail(){ closeSheets(); closeDrawer(); fillChapRail(); $("chapRail").classList.add("open"); $("drawerScrim").classList.add("open"); }
+function closeChapRail(){ $("chapRail").classList.remove("open"); if(!drawerIsOpen()) $("drawerScrim").classList.remove("open"); }
 function sheetIsOpen(){ return !!document.querySelector(".sheet.open"); }
+function fillChapRail(){
+  const b=bookMeta(state.book); if(!b) return;
+  $("chapRailTitle").textContent=displayName(state.book);
+  $("chapRailNow").textContent="Chapter "+state.chapter+" of "+b.n;
+  const grid=$("chapRailGrid"); grid.innerHTML="";
+  for(let i=1;i<=b.n;i++){
+    const btn=document.createElement("button");
+    btn.className="chap-btn"+(i===state.chapter?" active":"");
+    btn.textContent=i;
+    btn.onclick=()=>{ showChapter(state.book,i,0); closeChapRail(); };
+    grid.appendChild(btn);
+  }
+  const first=state.chapter<=1, last=state.chapter>=b.n;
+  ["chapRailPrevTop","chapRailPrevBot"].forEach(id=>{ $(id).disabled=first; });
+  ["chapRailNextTop","chapRailNextBot"].forEach(id=>{ $(id).disabled=last; });
+}
+function chapRailPrev(){ if(state.chapter>1){ showChapter(state.book,state.chapter-1); fillChapRail(); } }
+function chapRailNext(){ const b=bookMeta(state.book); if(b&&state.chapter<b.n){ showChapter(state.book,state.chapter+1); fillChapRail(); } }
 (function bindDrawerSwipe(){
   const swipe={x:0,y:0,on:false,axis:null};
   function ignore(el){
@@ -337,9 +382,14 @@ function sheetIsOpen(){ return !!document.querySelector(".sheet.open"); }
     if(e&&e.cancelable) e.preventDefault();
     if(Math.abs(dx)<48) return;
     swipe.on=false;
-    const open=drawerIsOpen();
-    if(!open && dx>0) openDrawer();
-    else if(open && dx<0) closeDrawer();
+    const w=window.innerWidth||320;
+    const fromLeft=swipe.x<w*0.5;
+    const fromRight=swipe.x>=w*0.5;
+    const leftOpen=drawerIsOpen(), rightOpen=chapRailIsOpen();
+    if(leftOpen && dx<0) closeDrawer();
+    else if(rightOpen && dx>0) closeChapRail();
+    else if(!leftOpen && !rightOpen && dx>0 && fromLeft) openDrawer();
+    else if(!leftOpen && !rightOpen && dx<0 && fromRight) openChapRail();
   }
   document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; start(e.touches[0].clientX,e.touches[0].clientY,e.target); },{passive:true});
   document.addEventListener("touchmove",e=>{ if(!swipe.on||e.touches.length!==1) return; move(e.touches[0].clientX,e.touches[0].clientY,e); },{passive:false});
@@ -359,7 +409,7 @@ function verseRangeHtml(book,ch,start,end){ const arr=chaptersOf(book)[ch-1]||[]
 function preambleHtml(book,chapter){ const p=(window.STUDY&&STUDY.preambles||{})[book]; if(!p||!state.showPreamble) return ""; const open=chapter===1?" open":""; return `<details class="preamble"${open}><summary>Introduction · ${escapeHtml(displayName(book))}</summary><div class="meta"><strong>Author.</strong> ${escapeHtml(p.author)}<br/><strong>Setting.</strong> ${escapeHtml(p.date)}<br/><strong>Theme.</strong> ${escapeHtml(p.theme)}</div><p>${escapeHtml(p.body)}</p><div class="outline"><strong>Outline.</strong> ${escapeHtml(p.outline)}</div></details>`; }
 function footnotesHtml(book,chapter){ if(!state.showNotes) return ""; const list=notesForChapter(book,chapter); if(!list.length) return ""; let html=`<section class="footnotes" id="footnotes"><h3>Notes</h3>`; for(const item of list){ const n=item.note; html+=`<article class="fn" id="fn-${item.key}"><div class="fn-head"><button type="button" class="fn-ref" data-verse="${item.verse}">${chapter}:${item.verse}</button><span class="fn-kind">${escapeHtml(KIND_LABEL[n.kind]||n.kind||"Note")}</span></div><h4>${escapeHtml(n.title||"")}</h4><p>${escapeHtml(n.body||"")}</p>${(n.see||[]).map(s=>{ const p=parseSee(s); const label=displayName(p.book)+" "+p.chapter+(p.verse?":"+p.verse:""); return `<button class="see-btn" data-see="${escapeHtml(s)}">See ${escapeHtml(label)}</button>`; }).join("")}</article>`; } return html+"</section>"; }
 function chapterHasNotes(book,chapter){ return state.showNotes && notesForChapter(book,chapter).length>0; }
-function showChapter(book,chapter,restoreScroll,highlight){ if(!readingKeep) hideBackChip(); state.tab="bible"; state.book=book; state.chapter=chapter; setTab("bible"); const meta=bookMeta(book); const arr=chaptersOf(book)[chapter-1]||[]; $("nowRef").textContent=`${displayName(book)} ${chapter}`; const i=bookIndex(book); $("prevCh").disabled=!(chapter>1||i>0); $("nextCh").disabled=!(meta&&(chapter<meta.n||i<window.BIBLE.books.length-1)); const notesLink=chapterHasNotes(book,chapter)?'<button type="button" class="jump-notes">Notes ↓</button>':""; pane.innerHTML=`<div class="wrap"><div class="ref-line">Holy Scripture</div><h2 class="book-title">${escapeHtml(displayName(book))}</h2><div class="chapter-num">Chapter ${chapter}${notesLink}</div>${preambleHtml(book,chapter)}<article class="verses">${verseRangeHtml(book,chapter,1,arr.length-1)}</article>${footnotesHtml(book,chapter)}</div>`; if(restoreScroll) pane.scrollTop=restoreScroll*(pane.scrollHeight-pane.clientHeight); else pane.scrollTop=0; if(highlight){ const el=document.getElementById("v"+highlight); if(el) setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),40);} savePrefs(); }
+function showChapter(book,chapter,restoreScroll,highlight){ if(!readingKeep) hideBackChip(); state.tab="bible"; state.book=book; state.chapter=chapter; setTab("bible"); const meta=bookMeta(book); const arr=chaptersOf(book)[chapter-1]||[]; $("nowRef").textContent=`${displayName(book)} ${chapter}`; const i=bookIndex(book); $("prevCh").disabled=!(chapter>1||i>0); $("nextCh").disabled=!(meta&&(chapter<meta.n||i<window.BIBLE.books.length-1)); const notesLink=chapterHasNotes(book,chapter)?'<button type="button" class="jump-notes">Notes ↓</button>':""; pane.innerHTML=`<div class="wrap"><div class="ref-line">Holy Scripture</div><h2 class="book-title">${escapeHtml(displayName(book))}</h2><div class="chapter-num">Chapter ${chapter}${notesLink}</div>${preambleHtml(book,chapter)}<article class="verses">${verseRangeHtml(book,chapter,1,arr.length-1)}</article>${footnotesHtml(book,chapter)}</div>`; if(restoreScroll) pane.scrollTop=restoreScroll*(pane.scrollHeight-pane.clientHeight); else pane.scrollTop=0; if(highlight){ const el=document.getElementById("v"+highlight); if(el) setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),40);} if(chapRailIsOpen()) fillChapRail(); savePrefs(); }
 let readingReturn=null, readingKeep=false, readingAway=false;
 function hideBackChip(){ readingReturn=null; readingAway=false; $("backReading").classList.remove("show"); }
 function showBackChip(){ $("backReading").classList.add("show"); }
@@ -527,7 +577,10 @@ pane.addEventListener("click",e=>{
 pane.addEventListener("dblclick",e=>{ if(e.target.closest(".verse")) e.preventDefault(); });
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
 $("openBooks").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); };
-$("btnMenu").onclick=openDrawer; $("closeDrawer").onclick=closeDrawer; $("drawerScrim").onclick=closeDrawer;
+$("btnMenu").onclick=openDrawer; $("closeDrawer").onclick=closeDrawer;
+$("drawerScrim").onclick=()=>{ closeDrawer(); closeChapRail(); };
+$("chapRailPrevTop").onclick=chapRailPrev; $("chapRailPrevBot").onclick=chapRailPrev;
+$("chapRailNextTop").onclick=chapRailNext; $("chapRailNextBot").onclick=chapRailNext;
 $("drawerNav").addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) drawerGo(b.dataset.go); });
 $("btnSearch").onclick=()=>{ renderBookList(); openSheet($("sheetBooks")); setTimeout(()=>$("jumpInput").focus(),150); };
 $("btnMarks").onclick=()=>renderBookmarks();
@@ -545,7 +598,7 @@ $("actStudy").onclick=()=>{ const t=state.verseTarget; if(t) jumpToNote(t.book,t
 $("actBookmark").onclick=toggleBookmark; $("actComment").onclick=openComment; $("actCopy").onclick=copyVerse;
 document.querySelectorAll(".hl-picks [data-hl]").forEach(b=>b.onclick=()=>setHighlight(b.dataset.hl));
 $("commentSave").onclick=()=>saveComment(false); $("commentDelete").onclick=()=>saveComment(true);
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeSheets(); closeDrawer(); return; } if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||state.tab!=="bible") return; if(e.key==="ArrowLeft") goPrev(); if(e.key==="ArrowRight") goNext(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeSheets(); closeDrawer(); closeChapRail(); return; } if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||state.tab!=="bible") return; if(e.key==="ArrowLeft") goPrev(); if(e.key==="ArrowRight") goNext(); });
 (function init(){ loadPrefs(); if(!window.BIBLE||!window.BIBLE.t){ pane.innerHTML='<div class="status">Bible data did not load. Keep the app files in the same folder, or wait for GitHub Pages to finish the first download.</div>'; return; } if(!bookMeta(state.book)){ state.book="JHN"; state.chapter=1; } if(state.tab==="guide") renderEssay("how-to-read"); else if(state.tab==="bookmarks") renderBookmarks(); else if(state.tab==="marks") renderMarks(); else openTab(state.tab||"bible"); if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); } })();
 </script>
 </body>
