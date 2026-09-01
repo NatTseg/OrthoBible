@@ -302,6 +302,34 @@ function closeSheets(){ $("overlay").classList.remove("open"); document.querySel
 function openSheet(el){ closeDrawer(); $("overlay").classList.add("open"); el.classList.add("open"); }
 function openDrawer(){ closeSheets(); $("drawer").classList.add("open"); $("drawerScrim").classList.add("open"); }
 function closeDrawer(){ $("drawer").classList.remove("open"); $("drawerScrim").classList.remove("open"); }
+function drawerIsOpen(){ return $("drawer").classList.contains("open"); }
+function sheetIsOpen(){ return !!document.querySelector(".sheet.open"); }
+(function bindDrawerSwipe(){
+  const swipe={x:0,y:0,on:false};
+  function ignore(el){
+    if(!el||sheetIsOpen()) return true;
+    const tag=el.tagName;
+    if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT") return true;
+    if(el.closest(".search-row")) return true;
+    return false;
+  }
+  function start(x,y,el){ if(ignore(el)){ swipe.on=false; return; } swipe.x=x; swipe.y=y; swipe.on=true; }
+  function move(x,y){
+    if(!swipe.on) return;
+    const dx=x-swipe.x, dy=y-swipe.y;
+    if(Math.abs(dy)>24 && Math.abs(dy)>Math.abs(dx)){ swipe.on=false; return; }
+    if(Math.abs(dx)<56 || Math.abs(dx)<Math.abs(dy)*1.35) return;
+    swipe.on=false;
+    const open=drawerIsOpen();
+    if(!open && dx<0) openDrawer();
+    else if(!open && swipe.x<32 && dx>0) openDrawer();
+    else if(open && dx<0) closeDrawer();
+  }
+  document.addEventListener("touchstart",e=>{ if(e.touches.length!==1) return; start(e.touches[0].clientX,e.touches[0].clientY,e.target); },{passive:true});
+  document.addEventListener("touchmove",e=>{ if(!swipe.on||e.touches.length!==1) return; move(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  document.addEventListener("touchend",()=>{ swipe.on=false; },{passive:true});
+  document.addEventListener("touchcancel",()=>{ swipe.on=false; },{passive:true});
+})();
 function vk(book,ch,v){ return book+":"+ch+":"+v; }
 function studyNote(book,ch,v){ return (window.STUDY&&STUDY.notes||{})[vk(book,ch,v)]||null; }
 function notesForChapter(book,ch){ const all=(window.STUDY&&STUDY.notes)||{}; const prefix=book+":"+ch+":"; return Object.keys(all).filter(k=>k.startsWith(prefix)).map(k=>({key:k, verse:+k.split(":")[2], note:all[k]})).sort((a,b)=>a.verse-b.verse); }
