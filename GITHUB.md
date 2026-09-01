@@ -6,6 +6,7 @@ Upload these files to a public repo (same folder, no extra nesting):
 - bible-data.js
 - calendar-data.js
 - agpeya-data.js
+- study-data.js
 - sw.js
 - manifest.webmanifest
 - icon.svg

@@ -1,11 +1,13 @@
-const CACHE = "orthodox-bible-v2";
+const CACHE = "orthodox-bible-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./bible-data.js",
   "./calendar-data.js",
   "./agpeya-data.js",
-  "./manifest.webmanifest"
+  "./study-data.js",
+  "./manifest.webmanifest",
+  "./icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
