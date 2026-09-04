@@ -1,4 +1,4 @@
-const CACHE = "orthodox-bible-v11";
+const CACHE = "orthodox-bible-v13";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./agpeya-data.js",
   "./study-data.js",
   "./manifest.webmanifest",
+  "./wisdom-data.js",
   "./icon.svg",
   "./apple-touch-icon.png",
   "./icon-512.png"

@@ -22,7 +22,7 @@ window.TEWAHEDO = (function () {
 
   function toEthiopic(date) {
     const gy = date.getFullYear(), gm = date.getMonth() + 1, gd = date.getDate();
-    const newYearDay = ((gy - 1) % 4 === 3) ? 12 : 11; // Sep 11, or 12 after Greg leap
+    const newYearDay = isGregLeap(gy + 1) ? 12 : 11; // Sep 11, or 12 in the year before a Greg leap
     let ey, start;
     const sepNew = new Date(gy, 8, newYearDay);
     if (date >= sepNew) {
@@ -30,7 +30,7 @@ window.TEWAHEDO = (function () {
       start = sepNew;
     } else {
       ey = gy - 8;
-      const prevNY = ((gy - 2) % 4 === 3) ? 12 : 11;
+      const prevNY = isGregLeap(gy) ? 12 : 11;
       start = new Date(gy - 1, 8, prevNY);
     }
     const doy = Math.floor((date - start) / 86400000) + 1;
@@ -89,9 +89,9 @@ window.TEWAHEDO = (function () {
     if (d >= -8 && d < -2) return { name: "Holy Week", fast: "Holy Week · strict fast" };
     if (d === -2) return { name: "Good Friday — Siqlet", fast: "Crucifixion · strict fast" };
     if (d === 0) return { name: "Tinsae — Holy Pascha / Resurrection", fast: "Feast · no fast" };
-    if (d > 0 && d <= 50) return { name: "Zemen Tinsae — Season of Resurrection", fast: d === 0 ? "Feast" : null };
     if (d === 39) return { name: "Erget — Ascension", fast: "Feast · no fast" };
     if (d === 49) return { name: "Peraqlitos — Pentecost", fast: "Feast · no fast" };
+    if (d > 0 && d <= 50) return { name: "Zemen Tinsae — Season of Resurrection", fast: null };
     return { name: "", fast: null };
   }
 

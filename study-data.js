@@ -1,7 +1,10 @@
 /* Original Orthodox reading helps for OrthoBible.
    Structure follows a study-Bible pattern (book preamble + verse notes + how-to-read).
    Wording is not taken from The Orthodox Study Bible (copyright St. Athanasius Academy / Thomas Nelson).
-   Typology and cross-references follow public-domain patristic and liturgical tradition. */
+   Typology and cross-references follow public-domain patristic and liturgical tradition.
+   NOTE: if a local osb-notes.js file is present (personal use, not committed), it loads
+   after this file and overrides STUDY.notes and STUDY.preambles with the owner's own
+   Orthodox Study Bible annotations. */
 window.STUDY = {
   about: "Book introductions, a short guide on how to read Scripture in the Church, and verse notes on typology and the Fathers. These are original notes, not the copyrighted Orthodox Study Bible apparatus.",
 
