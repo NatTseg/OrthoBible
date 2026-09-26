@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <meta name="theme-color" content="#f8f6f0" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -72,17 +72,19 @@
           aria-label="Next chapter"
           data-icon="right"
         ></button>
+        <div class="chapter-tools" id="chapterTools">
+          <button
+            id="openChapterDrawer"
+            aria-label="Open chapters — or swipe left"
+            title="Chapters — swipe left to open"
+            aria-haspopup="dialog"
+            aria-controls="dialog"
+          >
+            <span data-icon="chapters"></span
+            ><span class="chapters-label">Chapters</span>
+          </button>
+        </div>
       </nav>
-      <div class="chapter-tools" id="chapterTools">
-        <button
-          id="openChapterDrawer"
-          aria-haspopup="dialog"
-          aria-controls="dialog"
-        >
-          <span data-icon="chapters"></span> Chapters
-          <span class="swipe-hint">· swipe left</span>
-        </button>
-      </div>
       <main id="pane" tabindex="-1">
         <p class="empty">Opening Scripture…</p>
       </main>

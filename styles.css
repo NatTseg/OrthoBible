@@ -71,7 +71,7 @@ button {
   display: none !important;
 }
 .app {
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   max-width: 1000px;
   margin: auto;
   display: flex;
@@ -730,8 +730,8 @@ dialog.chapter-drawer {
   margin: 0;
   width: min(360px, 92vw);
   max-width: 92vw;
-  height: 100dvh;
-  max-height: 100dvh;
+  height: var(--app-height, 100dvh);
+  max-height: var(--app-height, 100dvh);
   border-radius: 16px 0 0 16px;
   border-width: 0 0 0 1px;
   padding-bottom: var(--safe);
@@ -781,5 +781,162 @@ dialog.chapter-drawer {
 @media (prefers-reduced-motion: reduce) {
   dialog.chapter-drawer {
     animation: none;
+  }
+}
+
+/* The page is the app shell; only the reading pane and dialogs scroll. */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body {
+  -webkit-text-size-adjust: 100%;
+}
+.app {
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+#pane {
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+}
+.header,
+.chapter-bar,
+.tabs {
+  min-width: 0;
+  flex-shrink: 0;
+}
+.brand {
+  min-width: 0;
+}
+.brand img {
+  flex-shrink: 0;
+}
+.chapter-picker {
+  flex: 1;
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.chapter-picker > span:first-child {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chapter-tools {
+  width: auto;
+  margin: 0 0 0 6px;
+  padding: 0;
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+}
+.chapter-tools button {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 8px;
+}
+.chapter-tools .icon {
+  width: 21px;
+  height: 21px;
+}
+dialog {
+  max-height: calc(
+    var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - 16px
+  );
+  overscroll-behavior: contain;
+  overflow-x: hidden;
+}
+.dialog-head h2 {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.dialog-head .icon-button {
+  flex-shrink: 0;
+}
+input,
+textarea {
+  font-size: 16px;
+}
+@media (max-width: 600px) {
+  .header {
+    padding: calc(6px + env(safe-area-inset-top, 0px)) 14px 6px;
+  }
+  .brand {
+    font-size: 18px;
+  }
+  .brand img {
+    width: 29px;
+    height: 29px;
+  }
+  .brand small {
+    display: none;
+  }
+  .chapter-bar {
+    padding: 4px 10px;
+  }
+  .chapters-label {
+    display: none;
+  }
+  #pane {
+    padding: 22px 18px 28px;
+  }
+  .chapter-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .chapter-heading h1 {
+    font-size: 30px;
+  }
+  .introduction {
+    margin-bottom: 20px;
+  }
+  .tabs {
+    padding-top: 4px;
+    padding-bottom: calc(4px + var(--safe));
+  }
+  dialog {
+    max-width: 100%;
+    max-height: calc(
+      var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - 8px
+    );
+  }
+  dialog.chapter-drawer {
+    height: var(--app-height, 100dvh);
+    max-height: var(--app-height, 100dvh);
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .header {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: 0;
+  }
+  .brand small {
+    display: none;
+  }
+  .chapter-bar {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .tabs {
+    padding-top: 0;
+    padding-bottom: var(--safe);
+  }
+  .tabs button {
+    flex-direction: row;
+    min-height: 44px;
+  }
+  #pane {
+    padding-top: 16px;
   }
 }
