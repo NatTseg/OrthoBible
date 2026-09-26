@@ -5,6 +5,7 @@ A simple, offline Scripture reader. World English Bible with deuterocanon in Ort
 - **Read:** choose any book and chapter; tap a verse number to save or annotate it.
 - **Search:** enter a reference such as John 3:16 or a phrase such as “love one another.”
 - **Wisdom:** browse passages by topic.
+- **Prayers:** a simple prayer book with eight prayers and Psalm text, available offline.
 - **Saved:** filter your bookmarks, highlights, and comments.
 - **Reading settings:** change text size, light/dark appearance, introductions, and notes.
 

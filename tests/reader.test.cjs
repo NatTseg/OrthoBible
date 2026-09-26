@@ -44,7 +44,12 @@ function reader(stored = {}) {
   };
   context.window = context;
   vm.createContext(context);
-  for (const file of ["bible-data.js", "study-data.js", "wisdom-data.js"])
+  for (const file of [
+    "bible-data.js",
+    "study-data.js",
+    "wisdom-data.js",
+    "prayers-data.js",
+  ])
     vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context);
   const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
   // Bind functions and event handlers, without rendering the initial browser view.
@@ -124,7 +129,7 @@ test("activation deletes only old OrthoBible caches", async () => {
       keys: async () => [
         "unrelated-app-v1",
         "orthodox-bible-v13",
-        "orthodox-bible-v17",
+        "orthodox-bible-v18",
       ],
       delete: async (key) => deleted.push(key),
     },
@@ -214,7 +219,14 @@ test("viewport fit follows the keyboard and restores responsive height without o
   );
   assert.equal(run("window.testHeight"), "360px");
   run("window.visualViewport.height = 844; fitViewport();");
-  assert.equal(run("window.testHeight"), "100dvh");
+  assert.equal(run("window.testHeight"), "844px");
   run("window.visualViewport = {height: 422, scale: 2}; fitViewport();");
-  assert.equal(run("window.testHeight"), "100dvh");
+  assert.equal(run("window.testHeight"), "844px");
+});
+
+test('prayer book entries have unique IDs and available text', () => {
+  const run = reader();
+  assert.equal(run('PRAYERS.length'), 8);
+  assert.equal(run('new Set(PRAYERS.map(p => p.id)).size'), 8);
+  assert.equal(run('PRAYERS.every(p => p.title && (p.text?.trim() || chapterText(p.book, p.chapter).length > 1))'), true);
 });

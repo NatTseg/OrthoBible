@@ -223,6 +223,7 @@ const $ = (id) => document.getElementById(id);
 const pane = $("pane");
 const dialog = $("dialog");
 const icons = {
+  prayer: '<path d="M12 3v18M6 8h12"/>',
   chapters:
     '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M7 8h4M7 12h4M7 16h4"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
@@ -359,7 +360,8 @@ function loadPrefs() {
     }
   }
   if (["bookmarks", "marks"].includes(state.tab)) state.tab = "saved";
-  if (!["bible", "wisdom", "saved"].includes(state.tab)) state.tab = "bible";
+  if (!["bible", "wisdom", "prayers", "saved"].includes(state.tab))
+    state.tab = "bible";
   state.theme = state.theme === "dark" ? "dark" : "light";
   applyAppearance();
 }
@@ -392,6 +394,7 @@ function openTab(tab) {
   selectTab(tab);
   if (tab === "bible") renderChapter(state.scroll);
   else if (tab === "wisdom") renderWisdom();
+  else if (tab === "prayers") renderPrayers();
   else renderSaved();
   persist();
 }
@@ -494,6 +497,28 @@ function renderWisdom() {
   }
   pane.scrollTop = 0;
 }
+let selectedPrayer = null;
+let prayerListTop = 0;
+function renderPrayers() {
+  const prayer = window.PRAYERS.find((p) => p.id === selectedPrayer);
+  if (!prayer) {
+    pane.innerHTML = `<div class="content"><p class="eyebrow">Daily prayer</p><h1>Prayer Book</h1><p class="subtitle">A collection of prayers to return to each day.</p><div class="prayer-list">${window.PRAYERS.map((p) => `<button class="topic" data-prayer="${p.id}"><span>${esc(p.title)}</span>${icon("right")}</button>`).join("")}</div></div>`;
+    pane.scrollTop = prayerListTop;
+    return;
+  }
+  const text = prayer.book
+    ? chapterText(prayer.book, prayer.chapter)
+        .slice(1)
+        .filter(Boolean)
+        .join("\n\n")
+    : prayer.text;
+  pane.innerHTML = `<div class="content"><button class="text-button" id="allPrayers">‹ All prayers</button><p class="eyebrow">Prayer Book</p><h1>${esc(prayer.title)}</h1><article class="prayer-text">${esc(text)}</article></div>`;
+  pane.scrollTop = 0;
+  $("allPrayers").onclick = () => {
+    selectedPrayer = null;
+    renderPrayers();
+  };
+}
 function renderSaved() {
   const bookmarkKeys = state.bookmarks
     .slice()
@@ -572,7 +597,7 @@ function showBooks() {
   };
   $("bookFilter").oninput = render;
   render();
-  $("bookFilter").focus();
+  $("closeDialog").focus({ preventScroll: true });
 }
 function neighboringBook(book, direction) {
   const order = bookOrder();
@@ -936,6 +961,12 @@ function showEssay(id) {
 function handleAction(event) {
   const button = event.target.closest("button");
   if (!button) return;
+  if (button.dataset.prayer) {
+    prayerListTop = pane.scrollTop;
+    selectedPrayer = button.dataset.prayer;
+    renderPrayers();
+    return;
+  }
   if (button.dataset.action) {
     const p = parseKey(button.dataset.key);
     if (button.dataset.action === "verse") showVerse(p.book, p.ch, p.v);
@@ -1041,22 +1072,33 @@ document.addEventListener("keydown", (e) => {
 // Leave pinch zoom alone so magnification remains accessible.
 function fitViewport() {
   const viewport = window.visualViewport;
-  if (viewport && viewport.scale !== 1) return;
+  if (viewport && Math.abs(viewport.scale - 1) > 0.01) return;
   document.documentElement.style.setProperty(
     "--app-height",
-    viewport && viewport.height < window.innerHeight - 1
-      ? `${viewport.height}px`
-      : "100dvh",
+    `${viewport ? viewport.height : window.innerHeight}px`,
   );
 }
-window.addEventListener("resize", fitViewport);
-window.visualViewport?.addEventListener("resize", fitViewport);
+let viewportSettleTimer;
+function syncViewport() {
+  fitViewport();
+  clearTimeout(viewportSettleTimer);
+  viewportSettleTimer = setTimeout(fitViewport, 300);
+}
+window.addEventListener("resize", syncViewport);
+window.addEventListener("orientationchange", syncViewport);
+window.addEventListener("pageshow", syncViewport);
+window.visualViewport?.addEventListener("resize", syncViewport);
+window.visualViewport?.addEventListener("scroll", syncViewport);
+document.addEventListener("visibilitychange", syncViewport);
+document.addEventListener("focusin", syncViewport);
+document.addEventListener("focusout", syncViewport);
 fitViewport();
 if (window.BIBLE?.t) {
   loadPrefs();
   selectTab(state.tab);
   if (state.tab === "bible") renderChapter(state.scroll);
   else if (state.tab === "wisdom") renderWisdom();
+  else if (state.tab === "prayers") renderPrayers();
   else renderSaved();
   if ("serviceWorker" in navigator)
     navigator.serviceWorker.register("./sw.js").catch(() => {});
