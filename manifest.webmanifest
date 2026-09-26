@@ -1,13 +1,12 @@
 {
   "name": "Orthodox Bible",
   "short_name": "Orthodox Bible",
-  "description": "Offline Orthodox Scripture reader with Tewahedo and Coptic calendars and Alexandrian hours.",
+  "description": "A simple offline Scripture reader with study notes, saved verses, and passages for everyday life.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0b0d",
-  "theme_color": "#0a0b0d",
-  "orientation": "portrait",
+  "background_color": "#f8f6f0",
+  "theme_color": "#f8f6f0",
   "icons": [
     {
       "src": "./icon.svg",

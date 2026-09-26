@@ -1,47 +1,59 @@
-const CACHE = "orthodox-bible-v13";
+const CACHE = "orthodox-bible-v15";
 const ASSETS = [
   "./",
   "./index.html",
+  "./app.js",
+  "./styles.css",
   "./bible-data.js",
-  "./calendar-data.js",
-  "./agpeya-data.js",
   "./study-data.js",
-  "./manifest.webmanifest",
   "./wisdom-data.js",
+  "./manifest.webmanifest",
   "./icon.svg",
   "./apple-touch-icon.png",
-  "./icon-512.png"
+  "./icon-512.png",
 ];
-
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting()),
   );
 });
-
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith("orthodox-bible-") && key !== CACHE)
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   );
 });
-
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  const req = event.request,
+    url = new URL(req.url);
+  if (
+    req.method !== "GET" ||
+    url.origin !== self.location.origin ||
+    !url.href.startsWith(self.registration.scope)
+  )
+    return;
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.open(CACHE).then(async (cache) => {
+      const cached = await cache.match(req);
       if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          if (res && res.ok && new URL(req.url).origin === self.location.origin) {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match("./index.html"));
-    })
+      try {
+        return await fetch(req);
+      } catch {
+        if (req.mode === "navigate")
+          return (await cache.match("./index.html")) || Response.error();
+        return Response.error();
+      }
+    }),
   );
 });
