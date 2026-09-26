@@ -1037,6 +1037,21 @@ document.addEventListener("keydown", (e) => {
     nextChapter(1);
   }
 });
+// Follow the visible screen when browser bars or the on-screen keyboard resize it.
+// Leave pinch zoom alone so magnification remains accessible.
+function fitViewport() {
+  const viewport = window.visualViewport;
+  if (viewport && viewport.scale !== 1) return;
+  document.documentElement.style.setProperty(
+    "--app-height",
+    viewport && viewport.height < window.innerHeight - 1
+      ? `${viewport.height}px`
+      : "100dvh",
+  );
+}
+window.addEventListener("resize", fitViewport);
+window.visualViewport?.addEventListener("resize", fitViewport);
+fitViewport();
 if (window.BIBLE?.t) {
   loadPrefs();
   selectTab(state.tab);

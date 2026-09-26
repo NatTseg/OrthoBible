@@ -1,6 +1,6 @@
 {
   "name": "Orthodox Bible",
-  "short_name": "Orthodox Bible",
+  "short_name": "OrthoBible",
   "description": "A simple offline Scripture reader with study notes, saved verses, and passages for everyday life.",
   "start_url": "./index.html",
   "scope": "./",
@@ -26,5 +26,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "./"
 }

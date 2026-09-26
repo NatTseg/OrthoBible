@@ -124,7 +124,7 @@ test("activation deletes only old OrthoBible caches", async () => {
       keys: async () => [
         "unrelated-app-v1",
         "orthodox-bible-v13",
-        "orthodox-bible-v16",
+        "orthodox-bible-v17",
       ],
       delete: async (key) => deleted.push(key),
     },
@@ -205,4 +205,16 @@ test("chapter swipe requires a deliberate horizontal movement", () => {
   assert.equal(run("swipeDirection(-30, 0)"), 0);
   assert.equal(run("swipeDirection(-80, 100)"), 0);
   assert.equal(run("swipeDirection(-80, 60)"), 0);
+});
+
+test("viewport fit follows the keyboard and restores responsive height without overriding zoom", () => {
+  const run = reader();
+  run(
+    "document.documentElement.style.setProperty = (name, value) => window.testHeight = value; window.innerHeight = 844; window.visualViewport = {height: 360, scale: 1}; fitViewport();",
+  );
+  assert.equal(run("window.testHeight"), "360px");
+  run("window.visualViewport.height = 844; fitViewport();");
+  assert.equal(run("window.testHeight"), "100dvh");
+  run("window.visualViewport = {height: 422, scale: 2}; fitViewport();");
+  assert.equal(run("window.testHeight"), "100dvh");
 });
