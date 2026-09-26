@@ -1,9 +1,19 @@
-# OrthoBible
+# Orthodox Bible
 
-An offline Orthodox Scripture reader: World English Bible with deuterocanon in Orthodox Study Bible book order, Tewahedo and Coptic calendars, Alexandrian hours, book introductions, typology notes, bookmarks, and highlights.
+A simple, offline Scripture reader. World English Bible with deuterocanon in Orthodox Study Bible book order, original study notes, bookmarks, highlights, comments, and passages for everyday life.
 
-Live: https://nattseg.github.io/OrthoBible/
+- **Read:** choose any book and chapter; tap a verse number to save or annotate it.
+- **Search:** enter a reference such as John 3:16 or a phrase such as “love one another.”
+- **Wisdom:** browse passages by topic.
+- **Saved:** filter your bookmarks, highlights, and comments.
+- **Reading settings:** change text size, light/dark appearance, introductions, and notes.
 
-The printed Orthodox Study Bible (NKJV / St. Athanasius Academy Septuagint, and its copyrighted notes) is not copied here. Introductions and verse notes are original, in a study-Bible pattern.
+Preferences and saved verses remain in this browser. Existing `obible3` data is preserved across the redesign. Calendar and Hours sections have been removed.
 
-See `GITHUB.md` for GitHub Pages / Add to Home Screen.
+The printed Orthodox Study Bible (NKJV / St. Athanasius Academy Septuagint and copyrighted notes) is not copied here. Introductions and verse notes are original.
+
+## Local preview
+
+Run `python3 -m http.server 8080` in this directory, then open http://localhost:8080. No build step or external dependencies are required. Use an HTTP server rather than opening index.html as a file.
+
+See `GITHUB.md` for GitHub Pages and offline installation. Run regression checks with `node --test tests/*.test.cjs`.

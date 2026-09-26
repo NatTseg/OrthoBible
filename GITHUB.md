@@ -1,22 +1,9 @@
-# Put this on GitHub Pages
+# GitHub Pages and offline installation
 
-Upload these files to a public repo (same folder, no extra nesting):
+Publish the repository root from `main` using Settings → Pages → Deploy from a branch.
 
-- index.html
-- bible-data.js
-- calendar-data.js
-- agpeya-data.js
-- study-data.js
-- sw.js
-- manifest.webmanifest
-- icon.svg
-- apple-touch-icon.png
-- icon-512.png
+Keep these files together: `index.html`, `app.js`, `styles.css`, `bible-data.js`, `study-data.js`, `wisdom-data.js`, `sw.js`, `manifest.webmanifest`, `icon.svg`, `apple-touch-icon.png`, and `icon-512.png`.
 
-Repo → Settings → Pages → Source: Deploy from a branch → `main` / `/ (root)`.
+Open the Pages URL while connected, let the first download finish, then use your browser’s “Add to Home Screen” or “Install” command. After the service worker has cached the app, it works offline. Bookmarks, comments, highlights, and progress are stored in this browser.
 
-URL: `https://YOURUSER.github.io/REPO/`
-
-Open that URL in Safari on Wi-Fi, wait until Scripture appears, then Share → Add to Home Screen. Name it Orthodox Bible.
-
-After the first load the Home Screen icon works offline. Reading progress stays on this phone.
+When changing app files, increment the cache version in `sw.js` so installed readers receive the new assets. Close and reopen the app after an update to use the new version. Do not clear site data to update: that also erases saved verses.
