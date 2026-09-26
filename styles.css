@@ -700,3 +700,86 @@ blockquote {
     white-space: nowrap;
   }
 }
+.chapter-tools {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 6px 22px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.chapter-tools button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  min-height: 36px;
+  font-size: 12px;
+}
+.chapter-tools .icon {
+  width: 17px;
+  height: 17px;
+}
+.swipe-hint {
+  font-size: 11px;
+}
+dialog.chapter-drawer {
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(360px, 92vw);
+  max-width: 92vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 16px 0 0 16px;
+  border-width: 0 0 0 1px;
+  padding-bottom: var(--safe);
+  animation: drawer-enter 0.2s ease-out;
+}
+.chapter-drawer .dialog-head {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+}
+.chapter-drawer .dialog-head h2 {
+  font-size: 22px;
+}
+.chapter-drawer .chapter-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+.chapter-drawer .chapter-grid button {
+  min-height: 44px;
+}
+.drawer-position {
+  margin: 0 0 16px;
+}
+.drawer-books {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.drawer-books button {
+  text-align: left;
+  font-size: 12px;
+  padding: 12px 10px;
+}
+.drawer-books small {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+#drawerAllBooks {
+  margin-top: 20px;
+}
+@keyframes drawer-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.chapter-drawer {
+    animation: none;
+  }
+}

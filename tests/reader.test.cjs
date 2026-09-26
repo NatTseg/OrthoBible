@@ -124,7 +124,7 @@ test("activation deletes only old OrthoBible caches", async () => {
       keys: async () => [
         "unrelated-app-v1",
         "orthodox-bible-v13",
-        "orthodox-bible-v15",
+        "orthodox-bible-v16",
       ],
       delete: async (key) => deleted.push(key),
     },
@@ -142,28 +142,67 @@ test("activation deletes only old OrthoBible caches", async () => {
   assert.deepEqual(deleted, ["orthodox-bible-v13"]);
 });
 
-test('offline HTML fallback is reserved for navigation within this app', async () => {
+test("offline HTML fallback is reserved for navigation within this app", async () => {
   const handlers = {};
   const fallback = { html: true };
   const context = {
     URL,
     Response,
     self: {
-      addEventListener(name, fn) { handlers[name] = fn; },
-      location: { origin: 'https://example.com' },
-      registration: { scope: 'https://example.com/OrthoBible/' },
+      addEventListener(name, fn) {
+        handlers[name] = fn;
+      },
+      location: { origin: "https://example.com" },
+      registration: { scope: "https://example.com/OrthoBible/" },
     },
-    caches: { open: async () => ({ match: async key => key === './index.html' ? fallback : null }) },
-    fetch: async () => { throw new Error('Offline'); },
+    caches: {
+      open: async () => ({
+        match: async (key) => (key === "./index.html" ? fallback : null),
+      }),
+    },
+    fetch: async () => {
+      throw new Error("Offline");
+    },
   };
-  vm.runInNewContext(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'), context);
+  vm.runInNewContext(
+    fs.readFileSync(path.join(root, "sw.js"), "utf8"),
+    context,
+  );
   let response;
   const fire = (url, mode) => {
     response = undefined;
-    handlers.fetch({ request: { method: 'GET', url, mode }, respondWith(value) { response = value; } });
+    handlers.fetch({
+      request: { method: "GET", url, mode },
+      respondWith(value) {
+        response = value;
+      },
+    });
     return response;
   };
-  assert.equal(await fire('https://example.com/OrthoBible/unknown', 'navigate'), fallback);
-  assert.equal((await fire('https://example.com/OrthoBible/missing.js', 'cors')).type, 'error');
-  assert.equal(fire('https://example.com/OtherApp/', 'navigate'), undefined);
+  assert.equal(
+    await fire("https://example.com/OrthoBible/unknown", "navigate"),
+    fallback,
+  );
+  assert.equal(
+    (await fire("https://example.com/OrthoBible/missing.js", "cors")).type,
+    "error",
+  );
+  assert.equal(fire("https://example.com/OtherApp/", "navigate"), undefined);
+});
+
+test("chapter drawer book navigation respects the displayed canon and its boundaries", () => {
+  const run = reader();
+  assert.equal(run('neighboringBook("GEN", -1)'), null);
+  assert.equal(run('neighboringBook("REV", 1)'), null);
+  assert.equal(run('neighboringBook("JHN", -1)'), "LUK");
+  assert.equal(run('neighboringBook("JHN", 1)'), "ACT");
+  assert.equal(run('neighboringBook("UNKNOWN", 1)'), null);
+});
+test("chapter swipe requires a deliberate horizontal movement", () => {
+  const run = reader();
+  assert.equal(run("swipeDirection(-100, 10)"), -1);
+  assert.equal(run("swipeDirection(100, 10)"), 1);
+  assert.equal(run("swipeDirection(-30, 0)"), 0);
+  assert.equal(run("swipeDirection(-80, 100)"), 0);
+  assert.equal(run("swipeDirection(-80, 60)"), 0);
 });

@@ -223,6 +223,8 @@ const $ = (id) => document.getElementById(id);
 const pane = $("pane");
 const dialog = $("dialog");
 const icons = {
+  chapters:
+    '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M7 8h4M7 12h4M7 16h4"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   bookmark: '<path d="M6 4h12v17l-6-4-6 4z"/>',
   book: '<path d="M12 5v15M3 4c4-1 7 0 9 2 2-2 5-3 9-2v15c-4-1-7 0-9 2-2-2-5-3-9-2z"/>',
@@ -376,6 +378,7 @@ function rememberScroll() {
 function selectTab(tab) {
   state.tab = tab;
   $("chapterBar").hidden = tab !== "bible";
+  $("chapterTools").hidden = tab !== "bible";
   document.querySelectorAll("[data-tab]").forEach((b) => {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
@@ -539,6 +542,7 @@ function closeDialog() {
   if (dialog.open) dialog.close();
 }
 function openDialog(title, html) {
+  dialog.classList.remove("chapter-drawer");
   searchGeneration++;
   $("dialogTitle").textContent = title;
   $("dialogBody").innerHTML = html;
@@ -570,6 +574,118 @@ function showBooks() {
   render();
   $("bookFilter").focus();
 }
+function neighboringBook(book, direction) {
+  const order = bookOrder();
+  const index = order.indexOf(book);
+  return index < 0 ? null : order[index + direction] || null;
+}
+function showChapterDrawer() {
+  const book = state.book;
+  const previous = neighboringBook(book, -1),
+    next = neighboringBook(book, 1);
+  openDialog(
+    displayName(book),
+    `<p class="helper drawer-position">Chapter ${state.chapter} of ${bookMeta(book).n}</p><div class="drawer-books"><button class="secondary" id="drawerPreviousBook" ${previous ? "" : "disabled"}><span>‹ Previous book</span><small>${previous ? esc(displayName(previous)) : "First book"}</small></button><button class="secondary" id="drawerNextBook" ${next ? "" : "disabled"}><span>Next book ›</span><small>${next ? esc(displayName(next)) : "Last book"}</small></button></div><h3 class="section-label">Chapters</h3><div class="chapter-grid">${Array.from({ length: bookMeta(book).n }, (_, i) => `<button class="book-button" data-chapter="${i + 1}" data-chapter-book="${book}" aria-label="Chapter ${i + 1}" ${state.chapter === i + 1 ? 'aria-current="true"' : ""}>${i + 1}</button>`).join("")}</div><button class="text-button" id="drawerAllBooks">Browse all books ›</button>`,
+  );
+  dialog.classList.add("chapter-drawer");
+  const changeBook = (id, focusId) => {
+    if (!id) return;
+    goChapter(id, 1);
+    showChapterDrawer();
+    const button = $(focusId);
+    (button.disabled ? $("closeDialog") : button).focus({
+      preventScroll: true,
+    });
+  };
+  $("drawerPreviousBook").onclick = () =>
+    changeBook(previous, "drawerPreviousBook");
+  $("drawerNextBook").onclick = () => changeBook(next, "drawerNextBook");
+  $("drawerAllBooks").onclick = showBooks;
+  dialog
+    .querySelector('[aria-current="true"]')
+    ?.scrollIntoView({ block: "nearest" });
+  $("closeDialog").focus({ preventScroll: true });
+}
+// Direction must be clearly horizontal; vertical scrolling and short movements do nothing.
+function swipeDirection(dx, dy) {
+  return Math.abs(dx) >= 64 && Math.abs(dx) > Math.abs(dy) * 1.6
+    ? Math.sign(dx)
+    : 0;
+}
+function bindChapterSwipe(surface, drawer) {
+  let start = null,
+    axis = null,
+    suppressClickUntil = 0;
+  surface.addEventListener(
+    "touchstart",
+    (event) => {
+      start = null;
+      axis = null;
+      if (
+        event.touches.length !== 1 ||
+        (drawer
+          ? !dialog.classList.contains("chapter-drawer")
+          : dialog.open || state.tab !== "bible")
+      )
+        return;
+      if (event.target.closest("button, input, textarea, a, summary")) return;
+      start = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    },
+    { passive: true },
+  );
+  surface.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!start) return;
+      if (event.touches.length !== 1) {
+        start = null;
+        return;
+      }
+      const dx = event.touches[0].clientX - start.x,
+        dy = event.touches[0].clientY - start.y;
+      if (!axis && Math.max(Math.abs(dx), Math.abs(dy)) > 12)
+        axis = Math.abs(dx) > Math.abs(dy) * 1.6 ? "x" : "y";
+      if (axis === "y") {
+        start = null;
+        return;
+      }
+      if (axis === "x" && event.cancelable) event.preventDefault();
+    },
+    { passive: false },
+  );
+  surface.addEventListener(
+    "touchend",
+    (event) => {
+      if (!start) return;
+      const touch = event.changedTouches[0];
+      const direction = touch
+        ? swipeDirection(touch.clientX - start.x, touch.clientY - start.y)
+        : 0;
+      start = null;
+      if ((!drawer && direction === -1) || (drawer && direction === 1)) {
+        suppressClickUntil = Date.now() + 400;
+        if (drawer) closeDialog();
+        else showChapterDrawer();
+      }
+    },
+    { passive: true },
+  );
+  surface.addEventListener("touchcancel", () => {
+    start = null;
+  });
+  surface.addEventListener(
+    "click",
+    (event) => {
+      if (Date.now() < suppressClickUntil) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+}
+bindChapterSwipe(pane, false);
+bindChapterSwipe(dialog, true);
 function showChapters(book) {
   openDialog(
     displayName(book),
@@ -862,6 +978,7 @@ $("home").onclick = (e) => {
 $("search").onclick = showSearch;
 $("settings").onclick = showSettings;
 $("books").onclick = showBooks;
+$("openChapterDrawer").onclick = showChapterDrawer;
 $("previous").onclick = () => nextChapter(-1);
 $("next").onclick = () => nextChapter(1);
 $("closeDialog").onclick = closeDialog;
